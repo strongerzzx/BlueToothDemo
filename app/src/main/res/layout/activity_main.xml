@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    android:orientation="vertical">
+
+
+    <Button
+        android:id="@+id/btn_enable_blue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="是否支持蓝牙"
+        android:onClick="enableBlue"/>
+
+    <Button
+        android:id="@+id/btn_start_blue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="开启蓝牙"
+        android:onClick="startBlue"/>
+
+    <Button
+        android:id="@+id/btn_stop_blue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="关闭蓝牙"
+        android:onClick="stopBlue"/>
+    <Button
+        android:id="@+id/btn_pedui_blue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="获取配对蓝牙"
+        android:onClick="getBluePedui"/>
+
+    <Button
+        android:id="@+id/btn_open_blue_see"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="打开蓝牙可见性"
+        android:onClick="openSeeBlue"/>
+
+    <Button
+        android:id="@+id/btn_tranditional_search_blue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="传统蓝牙扫描"
+        android:onClick="tranditionalDiscoverBlue"/>
+
+    <Button
+        android:id="@+id/btn_stop_tranditional_search_blue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="关闭传统蓝牙扫描"
+        android:onClick="stopTranditionalDiscoverBlue"/>
+
+    <Button
+        android:id="@+id/btn_ble_search_blue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="BLE蓝牙扫描"
+        android:onClick="bleDiscoverBlue"/>
+
+    <Button
+        android:id="@+id/btn_stop_ble_search_blue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="关闭BLE蓝牙扫描"
+        android:onClick="stopBleDiscoverBlue"/>
+    <Button
+        android:id="@+id/btn_get_blue_state"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="判断蓝牙状态"
+        android:onClick="getBlueState"/>
+    <Button
+        android:id="@+id/btn_release_bound_blue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="解绑蓝牙"
+        android:onClick="realeaseBondBlue"/>
+
+
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/blue_rv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</LinearLayout>

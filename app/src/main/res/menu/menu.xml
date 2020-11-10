@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:title="传统蓝牙向服务器建立"  android:id="@+id/tranditon_connect"/>
+    <item android:title="发送数据Hello" android:id="@+id/trandition_send" />
+    <item android:title="断开"  android:id="@+id/trandition_duan_kai"/>
+    <item android:title="传统蓝牙作为服务器"  android:id="@+id/trandition_server"/>
+    <item android:title="停止监听"  android:id="@+id/trandition_stop_listener"/>
+
+
+</menu>

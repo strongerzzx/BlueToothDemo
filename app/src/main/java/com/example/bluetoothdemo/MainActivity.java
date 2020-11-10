@@ -25,8 +25,12 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Parcelable;
+import android.provider.SyncStateContract;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
@@ -38,6 +42,8 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
+//    public static final UUID CONNECTION_UUID=UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    public static final UUID CONNECTION_UUID=UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private static final String TAG = "MainActivity";
     private static final int REQUEST_BLUE_ENABLE = 0;
     private static final int REQUEST_PERMITE_CODE = 1;
@@ -47,9 +53,46 @@ public class MainActivity extends AppCompatActivity {
     private BlueControl mBlueControl;
     private BlueRvAdapter mAdapter;
 
+
+    private Handler mHandler = new Handler();
+    private BluetoothDevice mBoundDevice ;
     private List<BluetoothDevice> mDeviceList = new ArrayList<>();
     private Set<BluetoothDevice> mDviceSet = new HashSet<>();
     private RecyclerView mBlueRv;
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu,menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int itemId = item.getItemId();
+        switch (itemId) {
+            case R.id.tranditon_connect:
+                //TODO:作为客户端 --> 建立连接
+
+                break;
+            case R.id.trandition_send:
+                break;
+            case R.id.trandition_duan_kai:
+
+                break;
+            case R.id.trandition_server:
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mBlueControl.startService();
+                    }
+                }).start();
+
+                break;
+            case R.id.trandition_stop_listener:
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,11 +123,27 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+
     private void initBoundBlue() {
         mAdapter.setOnBlueDeviceClickListener(new BlueRvAdapter.onBlueDeviceClickListener() {
             @Override
             public void onBlueDeviceClick(BluetoothDevice device) {
                 boolean bond = device.createBond();
+
+
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mBlueControl.doConnection(device);
+                                Log.d(TAG,"要连接的设备 --> "+device.getName()+":"+device.getAddress());
+                            }
+                        }).start();
+                    }
+                },8000);
+
                 Toast.makeText(MainActivity.this, "绑定状态 --> "+bond, Toast.LENGTH_SHORT).show();
             }
         });
@@ -332,6 +391,7 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
+        //服务器返回的数据
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             byte[] value = characteristic.getValue();

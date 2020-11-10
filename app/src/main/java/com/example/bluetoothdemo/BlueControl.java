@@ -9,11 +9,12 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.util.Log;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -58,10 +59,15 @@ class BlueControl {
         return mAdapter.startDiscovery(); //true 找到了  false找不到
     }
 
+    private Set<BluetoothDevice> mBleSet = new HashSet<BluetoothDevice>();
     private ScanCallback mScanCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
+
+            BluetoothDevice device = result.getDevice();
+            mBleSet.add(device);
+
             String name = result.getDevice().getName();
             String address = result.getDevice().getAddress();
             mBleScanMap.put(address,name);
@@ -102,15 +108,15 @@ class BlueControl {
             String value = next.getValue();
             Log.d(TAG,key+"--> "+value);
         }
-
-
     }
 
+    /*
+       让别人能搜索到你 配合搜索
+     */
     public void openSeeBlue(Context context,int durtion){
         Intent discoverIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);//设置蓝牙可见 --> 让别的设备能够搜索到
         discoverIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION,durtion);//设置可见性的时间
         context.startActivity(discoverIntent);
-
     }
 
 
@@ -141,6 +147,12 @@ class BlueControl {
             e.printStackTrace();
         }
         return true;
+    }
+
+    private List<BluetoothDevice> mBleList = new ArrayList<>();
+    public List<BluetoothDevice> getBleDevice() {
+        mBleList.addAll(mBleSet);
+        return mBleList;
     }
 }
 

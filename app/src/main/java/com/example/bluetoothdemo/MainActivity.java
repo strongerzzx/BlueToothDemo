@@ -10,7 +10,14 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -55,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         //监听蓝牙开+关的广播
         IntentFilter stateFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED); //蓝牙状态监听广播
         stateFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);//监听设备绑定状态
-        stateFilter.addAction(BluetoothDevice.ACTION_CLASS_CHANGED);
+//        stateFilter.addAction(BluetoothDevice.ACTION_CLASS_CHANGED);
         registerReceiver(blueStateReceiver,stateFilter);
 
         //搜索 + 可见广播
@@ -81,6 +89,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+
 
     private void initView() {
         mAdapter = new BlueRvAdapter();
@@ -220,7 +230,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-
     /*
        传统蓝牙广播
      */
@@ -253,9 +262,103 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+
+    //Ble蓝牙配对
+    private BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
+        @Override
+        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            super.onConnectionStateChange(gatt, status, newState);
+            if (newState== BluetoothGatt.STATE_CONNECTED) {
+                Log.d(TAG,"Ble 蓝牙连接成功");
+
+                //Ble连接后  --> 开始扫描服务  -->回调ServiceDiscovered
+                boolean isService = gatt.discoverServices();
+                Log.d(TAG,"是否开始扫描服务 --> "+isService);
+
+
+            }else if (newState == BluetoothGatt.STATE_DISCONNECTED){
+                Log.d(TAG,"连接断开");
+            }
+            Log.d(TAG,"newState --> "+newState+":"+status);
+        }
+
+        /*
+                 0:00001801-0000-1000-8000-00805f9b34fb
+                 0:00001800-0000-1000-8000-00805f9b34fb
+                 0:0000180a-0000-1000-8000-00805f9b34fb
+                 0:0000180f-0000-1000-8000-00805f9b34fb
+                 0:00001812-0000-1000-8000-00805f9b34fb
+                 0:6e40ff01-b5a3-f393-e0a9-e50e24dcca9e */
+
+        @Override
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            List<BluetoothGattService> services = gatt.getServices();
+            for (BluetoothGattService service : services) {
+                Log.d(TAG,"service --> "+service.getType()+":"+service.getUuid());
+            }
+
+            //开始通信 先获取UUID对应的服务
+            BluetoothGattService serviceByUid = gatt.getService(UUID.fromString("00001801-0000-1000-8000-00805f9b34fb"));
+            //对蓝牙进行读写操作 --> 通过获取characteris的对应的Uuid  --> 回调给
+            BluetoothGattCharacteristic notifyCharcter = serviceByUid.getCharacteristic(UUID.fromString("notify uuid"));
+            BluetoothGattCharacteristic writeCharcter = serviceByUid.getCharacteristic(UUID.fromString("write uuid"));
+
+            //开始监听数据  通过descriptor --> 回调给onDescriptorWrite
+            gatt.setCharacteristicNotification(notifyCharcter,true);
+            //获取charcter中的描述 --> 不知道是否通过这个角色
+            BluetoothGattDescriptor descriptor = notifyCharcter.getDescriptor(UUID.fromString("00001801-0000-1000-8000-00805f9b34fb"));
+            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE); //标志 启用通知
+
+            //开始写数据 --> 回调给 onCharacteristicWrite
+            writeCharcter.setValue("测试数据");//其中的内容由协议规定
+            gatt.writeCharacteristic(writeCharcter);
+
+        }
+
+        @Override
+        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            if (status==BluetoothGatt.GATT_SUCCESS){
+                Log.d(TAG,"发送成功");
+            }
+            super.onCharacteristicWrite(gatt,characteristic,status);
+        }
+
+        //监听数据成功 --> 则会回调这里
+        @Override
+        public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+            if (status== BluetoothGatt.GATT_SUCCESS) {
+                Log.d(TAG,"开启监听成功");
+            }
+
+        }
+
+        @Override
+        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+            byte[] value = characteristic.getValue();
+            Log.d(TAG,"回复的数据 ---> "+new String(value,0,value.length));
+
+            //断开连接
+            gatt.disconnect();
+            gatt.close();
+        }
+    };
+
+
     //开启BLE扫描  必须先让蓝牙可见 --> 扫描
     public void bleDiscoverBlue(View view) {
         mBlueControl.bleDiscoveryBlue();
+
+        List<BluetoothDevice> bleDevice = mBlueControl.getBleDevice();
+        mAdapter.setData(bleDevice);
+
+        //绑定Ble蓝牙
+        mAdapter.setOnBlueDeviceClickListener(new BlueRvAdapter.onBlueDeviceClickListener() {
+            @Override
+            public void onBlueDeviceClick(BluetoothDevice device) {
+                device.connectGatt(MainActivity.this,false,mGattCallback);
+                Toast.makeText(MainActivity.this, "点击了Ble设备", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     //结束Ble扫描
